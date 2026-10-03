@@ -1,7 +1,7 @@
 """Breast Cancer Classification Using Machine Learning.
 
-四位組員只需填寫各自的 build_*_models()，回傳尚未訓練的分類器。
-空字典代表尚未完成；不會產生虛構的模型或評估結果。
+Each team member fills in their own build_*_models() with unfitted classifiers.
+An empty dictionary marks unfinished work; no models or results are fabricated.
 """
 
 import csv
@@ -10,7 +10,7 @@ from time import perf_counter
 
 import matplotlib
 
-matplotlib.use("Agg")  # 將圖存成檔案，支援沒有視窗的執行環境。
+matplotlib.use("Agg")  # Save plots to files, including in environments without a GUI.
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.base import clone
@@ -31,17 +31,17 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "results"
 # Member 1 — Logistic Regression
 # =============================================================================
 def build_logistic_regression_models():
-    """TODO：加入 LogisticRegression 分類器，比較不同 C。
+    """TODO: Add LogisticRegression classifiers and compare different C values.
 
-    請在此函式內加入需要的 import。
-    回傳格式：{"參數設定名稱": 尚未 fit 的分類器物件, ...}
-    說明欄位（由組員填寫）：
-      二元分類原理：
-      C 與正則化的關係：
-      實驗觀察：
+    Add the required imports inside this function.
+    Return format: {"configuration name": unfitted classifier object, ...}
+    Explanation fields (to be completed by the assigned member):
+      How binary classification works:
+      Relationship between C and regularization:
+      Experimental observations:
     """
     models = {
-        # TODO: 填入 Logistic Regression 的參數設定及模型。
+        # TODO: Add Logistic Regression configurations and model objects.
     }
     return models
 
@@ -50,17 +50,17 @@ def build_logistic_regression_models():
 # Member 2 — Decision Tree
 # =============================================================================
 def build_decision_tree_models():
-    """TODO：加入 DecisionTreeClassifier，比較 max_depth = 3、5、None。
+    """TODO: Add DecisionTreeClassifier models with max_depth = 3, 5, and None.
 
-    請在此函式內加入需要的 import，並使用 RANDOM_STATE。
-    回傳格式：{"參數設定名稱": 尚未 fit 的分類器物件, ...}
-    說明欄位（由組員填寫）：
-      決策樹原理：
-      模型深度與過擬合的關係：
-      實驗觀察：
+    Add the required imports inside this function and use RANDOM_STATE.
+    Return format: {"configuration name": unfitted classifier object, ...}
+    Explanation fields (to be completed by the assigned member):
+      How decision trees work:
+      Relationship between tree depth and overfitting:
+      Experimental observations:
     """
     models = {
-        # TODO: 填入 Decision Tree 的參數設定及模型。
+        # TODO: Add Decision Tree configurations and model objects.
     }
     return models
 
@@ -69,17 +69,17 @@ def build_decision_tree_models():
 # Member 3 — k-Nearest Neighbors
 # =============================================================================
 def build_knn_models():
-    """TODO：加入 KNeighborsClassifier，比較 k = 3、5、10。
+    """TODO: Add KNeighborsClassifier models with k = 3, 5, and 10.
 
-    請在此函式內加入需要的 import。
-    回傳格式：{"參數設定名稱": 尚未 fit 的分類器物件, ...}
-    說明欄位（由組員填寫）：
-      kNN 原理與距離計算：
-      k 值對分類結果的影響：
-      實驗觀察：
+    Add the required imports inside this function.
+    Return format: {"configuration name": unfitted classifier object, ...}
+    Explanation fields (to be completed by the assigned member):
+      How kNN works and how distances are calculated:
+      Effect of k on classification results:
+      Experimental observations:
     """
     models = {
-        # TODO: 填入 kNN 的參數設定及模型。
+        # TODO: Add kNN configurations and model objects.
     }
     return models
 
@@ -88,17 +88,17 @@ def build_knn_models():
 # Member 4 — Support Vector Machine
 # =============================================================================
 def build_svm_models():
-    """TODO：加入 SVC，比較 linear 與 rbf kernel。
+    """TODO: Add SVC models and compare linear and rbf kernels.
 
-    請在此函式內加入需要的 import。
-    回傳格式：{"參數設定名稱": 尚未 fit 的分類器物件, ...}
-    說明欄位（由組員填寫）：
-      決策邊界與最大間隔：
-      Linear 與 RBF kernel 的差異：
-      實驗觀察與四種方法的總結：
+    Add the required imports inside this function.
+    Return format: {"configuration name": unfitted classifier object, ...}
+    Explanation fields (to be completed by the assigned member):
+      Decision boundaries and maximum margin:
+      Differences between linear and RBF kernels:
+      Experimental observations and a summary of all four methods:
     """
     models = {
-        # TODO: 填入 SVM 的參數設定及模型。
+        # TODO: Add SVM configurations and model objects.
     }
     return models
 
@@ -112,7 +112,7 @@ MODEL_BUILDERS = {
 
 
 def prepare_data():
-    """固定分層切分；標準化留在 Pipeline 內以避免資料洩漏。"""
+    """Use a fixed stratified split; keep scaling in the Pipeline to avoid leakage."""
     dataset = load_breast_cancer()
     X_train, X_test, y_train, y_test = train_test_split(
         dataset.data,
@@ -128,7 +128,7 @@ def prepare_data():
 
 
 def make_pipeline(estimator):
-    """每次 fit 僅從該次訓練資料學習平均值與標準差。"""
+    """Learn scaling means and standard deviations only from each fit's training data."""
     return Pipeline([
         ("scaler", StandardScaler()),
         ("model", clone(estimator)),
@@ -136,7 +136,7 @@ def make_pipeline(estimator):
 
 
 def evaluate_family(name, candidates, X_train, X_test, y_train, y_test, class_names):
-    """用 CV 挑選該方法的設定，再進行一次最終測試集評估。"""
+    """Select a configuration using CV, then evaluate it once on the test set."""
     cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
     validation_rows = []
     for setting, estimator in candidates.items():
@@ -151,7 +151,7 @@ def evaluate_family(name, candidates, X_train, X_test, y_train, y_test, class_na
             "cv_accuracy_std": float(np.std(scores)),
         })
 
-    # 平手時選字典中先出現的設定，不使用測試集打破平手。
+    # Break ties by dictionary insertion order, without consulting the test set.
     best = max(validation_rows, key=lambda row: row["cv_accuracy_mean"])
     fitted = make_pipeline(candidates[best["setting"]])
     start = perf_counter()
