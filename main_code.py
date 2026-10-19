@@ -45,23 +45,223 @@ def build_logistic_regression_models():
     return models
 
 
+
 # =============================================================================
 # Member 2 — Decision Tree
 # =============================================================================
 def build_decision_tree_models():
-    """TODO: Add DecisionTreeClassifier models with max_depth = 3, 5, and None.
+    """Decision Tree classification and depth comparison."""
 
-    Add the required imports inside this function and use RANDOM_STATE.
-    Return format: {"configuration name": unfitted classifier object, ...}
-    Explanation fields (to be completed by the assigned member):
-      How decision trees work:
-      Relationship between tree depth and overfitting:
-      Experimental observations: test
-    """
-    models = {
-        # TODO: Add Decision Tree configurations and model objects.
-    }
+    import pandas as pd
+    from sklearn.tree import DecisionTreeClassifier, plot_tree
+    from sklearn.metrics import accuracy_score, confusion_matrix
+
+    # Load dataset
+    data = load_breast_cancer()
+
+    X = data.data
+    y = data.target
+
+    # Split dataset
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y,
+        test_size=TEST_SIZE,
+        random_state=RANDOM_STATE,
+        stratify=y
+    )
+
+    print("\n========== Decision Tree ==========")
+    print("Training samples:", len(X_train))
+    print("Testing samples:", len(X_test))
+
+    depths = [3, 5, None]
+
+    results = []
+    trained_models = {}
+    models = {}
+
+    # Compare different maximum depths
+    for depth in depths:
+
+        model = DecisionTreeClassifier(
+            max_depth=depth,
+            random_state=RANDOM_STATE
+        )
+
+        start = perf_counter()
+
+        model.fit(X_train, y_train)
+
+        training_time = perf_counter() - start
+
+        train_pred = model.predict(X_train)
+        test_pred = model.predict(X_test)
+
+        train_acc = accuracy_score(y_train, train_pred)
+        test_acc = accuracy_score(y_test, test_pred)
+
+        results.append({
+            "Max Depth": str(depth),
+            "Training Accuracy": train_acc,
+            "Testing Accuracy": test_acc,
+            "Training Time (s)": training_time
+        })
+
+        trained_models[str(depth)] = model
+
+        # Return unfitted classifiers to the main program
+        models[f"max_depth={depth}"] = DecisionTreeClassifier(
+            max_depth=depth,
+            random_state=RANDOM_STATE
+        )
+
+    df = pd.DataFrame(results)
+
+    print(df.to_string(index=False))
+
+    # Save results
+    df.to_csv(
+        OUTPUT_DIR / "decision_tree_results.csv",
+        index=False
+    )
+
+    # Accuracy comparison
+    plt.figure(figsize=(8, 5))
+
+    plt.plot(
+        df["Max Depth"],
+        df["Training Accuracy"],
+        marker="o",
+        label="Training Accuracy"
+    )
+
+    plt.plot(
+        df["Max Depth"],
+        df["Testing Accuracy"],
+        marker="s",
+        label="Testing Accuracy"
+    )
+
+    plt.xlabel("Max Depth")
+    plt.ylabel("Accuracy")
+    plt.title("Decision Tree Accuracy Comparison")
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(
+        OUTPUT_DIR / "decision_tree_accuracy.png",
+        dpi=300
+    )
+    plt.close()
+
+    # Confusion Matrix (Max Depth = 5)
+    model = trained_models["5"]
+
+    y_pred = model.predict(X_test)
+
+    cm = confusion_matrix(
+        y_test,
+        y_pred,
+        labels=[0, 1]
+    )
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    ConfusionMatrixDisplay(
+        cm,
+        display_labels=["Malignant", "Benign"]
+    ).plot(
+        ax=ax,
+        cmap="Blues",
+        colorbar=False
+    )
+
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.title("Decision Tree Confusion Matrix (Depth = 5)")
+
+    plt.savefig(
+        OUTPUT_DIR / "decision_tree_confusion_matrix.png",
+        dpi=300
+    )
+    plt.close()
+
+    # Decision Tree Visualization (Max Depth = 3)
+    model = trained_models["3"]
+
+    plt.figure(figsize=(16, 8))
+
+    plot_tree(
+        model,
+        feature_names=data.feature_names,
+        class_names=data.target_names,
+        filled=True,
+        rounded=True,
+        fontsize=8
+    )
+
+    plt.title("Decision Tree (Max Depth = 3)")
+
+    plt.savefig(
+        OUTPUT_DIR / "decision_tree_visualization.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.close()
+
+    # Additional Test: Overfitting Analysis
+    train_scores = []
+    test_scores = []
+
+    depth_range = range(1, 16)
+
+    for depth in depth_range:
+
+        model = DecisionTreeClassifier(
+            max_depth=depth,
+            random_state=RANDOM_STATE
+        )
+
+        model.fit(X_train, y_train)
+
+        train_scores.append(
+            model.score(X_train, y_train)
+        )
+
+        test_scores.append(
+            model.score(X_test, y_test)
+        )
+
+    plt.figure(figsize=(9, 5))
+
+    plt.plot(
+        depth_range,
+        train_scores,
+        marker="o",
+        label="Training Accuracy"
+    )
+
+    plt.plot(
+        depth_range,
+        test_scores,
+        marker="s",
+        label="Testing Accuracy"
+    )
+
+    plt.xlabel("Maximum Tree Depth")
+    plt.ylabel("Accuracy")
+    plt.title("Effect of Tree Depth on Model Performance")
+    plt.legend()
+    plt.grid(True)
+
+    plt.savefig(
+        OUTPUT_DIR / "decision_tree_overfitting.png",
+        dpi=300
+    )
+    plt.close()
+
     return models
+
 
 
 # =============================================================================
