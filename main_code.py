@@ -56,6 +56,9 @@ def build_decision_tree_models():
     from sklearn.tree import DecisionTreeClassifier
     from sklearn.metrics import accuracy_score, confusion_matrix
 
+    # Also allow this function to be run independently.
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
     # Load dataset
     data = load_breast_cancer()
 
