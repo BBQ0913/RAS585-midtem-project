@@ -51,9 +51,9 @@ def build_logistic_regression_models():
 # =============================================================================
 def build_decision_tree_models():
     """Decision Tree classification and depth comparison."""
-
+    
     import pandas as pd
-    from sklearn.tree import DecisionTreeClassifier, plot_tree
+    from sklearn.tree import DecisionTreeClassifier
     from sklearn.metrics import accuracy_score, confusion_matrix
 
     # Load dataset
@@ -181,81 +181,7 @@ def build_decision_tree_models():
     plt.title("Decision Tree Confusion Matrix (Depth = 5)")
 
     plt.savefig(
-        OUTPUT_DIR / "decision_tree_confusion_matrix.png",
-        dpi=300
-    )
-    plt.close()
-
-    # Decision Tree Visualization (Max Depth = 3)
-    model = trained_models["3"]
-
-    plt.figure(figsize=(16, 8))
-
-    plot_tree(
-        model,
-        feature_names=data.feature_names,
-        class_names=data.target_names,
-        filled=True,
-        rounded=True,
-        fontsize=8
-    )
-
-    plt.title("Decision Tree (Max Depth = 3)")
-
-    plt.savefig(
-        OUTPUT_DIR / "decision_tree_visualization.png",
-        dpi=300,
-        bbox_inches="tight"
-    )
-    plt.close()
-
-    # Additional Test: Overfitting Analysis
-    train_scores = []
-    test_scores = []
-
-    depth_range = range(1, 16)
-
-    for depth in depth_range:
-
-        model = DecisionTreeClassifier(
-            max_depth=depth,
-            random_state=RANDOM_STATE
-        )
-
-        model.fit(X_train, y_train)
-
-        train_scores.append(
-            model.score(X_train, y_train)
-        )
-
-        test_scores.append(
-            model.score(X_test, y_test)
-        )
-
-    plt.figure(figsize=(9, 5))
-
-    plt.plot(
-        depth_range,
-        train_scores,
-        marker="o",
-        label="Training Accuracy"
-    )
-
-    plt.plot(
-        depth_range,
-        test_scores,
-        marker="s",
-        label="Testing Accuracy"
-    )
-
-    plt.xlabel("Maximum Tree Depth")
-    plt.ylabel("Accuracy")
-    plt.title("Effect of Tree Depth on Model Performance")
-    plt.legend()
-    plt.grid(True)
-
-    plt.savefig(
-        OUTPUT_DIR / "decision_tree_overfitting.png",
+        OUTPUT_DIR / "decision_tree_depth5_confusion_matrix.png",
         dpi=300
     )
     plt.close()
