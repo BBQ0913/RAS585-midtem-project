@@ -27,20 +27,29 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "results"
 
 
 # =============================================================================
-# Member 1 — Logistic Regression
+# Yi-Hung Ting — Logistic Regression
 # =============================================================================
 def build_logistic_regression_models():
-    """TODO: Add LogisticRegression classifiers and compare different C values.
-
-    Add the required imports inside this function.
-    Return format: {"configuration name": unfitted classifier object, ...}
-    Explanation fields (to be completed by the assigned member):
-      How binary classification works:
-      Relationship between C and regularization:
-      Experimental observations:
+    """Build Logistic Regression models with different C values.
+    How binary classification works:
+      Logistic Regression predicts the probability of two possible classes.
+      In this project, the two classes are malignant and benign.
+    Relationship between C and regularization:
+      A smaller C gives stronger regularization, which makes the model simpler.
+      A larger C gives weaker regularization, which allows the model to fit
+      the training data more closely.
+    Experimental observations:
+      Five C values were tested: 0.01, 0.1, 1, 10, and 100.
+      C=0.1 had the highest cross-validation accuracy about 98.24%.
+      The final model achieved about 97.37% accuracy on the test data.
     """
+    from sklearn.linear_model import LogisticRegression
     models = {
-        # TODO: Add Logistic Regression configurations and model objects.
+        "C=0.01": LogisticRegression(C=0.01, max_iter=1000),
+        "C=0.1": LogisticRegression(C=0.1, max_iter=1000),
+        "C=1": LogisticRegression(C=1.0, max_iter=1000),
+        "C=10": LogisticRegression(C=10.0, max_iter=1000),
+        "C=100": LogisticRegression(C=100.0, max_iter=1000),
     }
     return models
 
