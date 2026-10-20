@@ -32,8 +32,10 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "results"
 def build_logistic_regression_models():
     """Build Logistic Regression models with different C values.
     How binary classification works:
-      Logistic Regression predicts the probability of two possible classes.
-      In this project, the two classes are malignant and benign.
+      Logistic Regression maps a linear score z = w^T x + b to a probability
+      with the sigmoid function: P(y=1 | x) = 1 / (1 + exp(-z)).
+      Here, class 0 is malignant and class 1 is benign. The default prediction
+      is benign when P(y=1 | x) > 0.5, and malignant otherwise.
     Relationship between C and regularization:
       A smaller C gives stronger regularization, which makes the model simpler.
       A larger C gives weaker regularization, which allows the model to fit
@@ -41,7 +43,10 @@ def build_logistic_regression_models():
     Experimental observations:
       Five C values were tested: 0.01, 0.1, 1, 10, and 100.
       C=0.1 had the highest cross-validation accuracy about 98.24%.
-      The final model achieved about 97.37% accuracy on the test data.
+      The final model achieved about 98.68% training accuracy and 97.37%
+      test accuracy. Its test confusion matrix was [[40, 2], [1, 71]],
+      with rows=true and columns=predicted, ordered malignant, benign.
+      These observations use the shared split and five-fold CV settings.
     """
     from sklearn.linear_model import LogisticRegression
     models = {
