@@ -18,7 +18,9 @@ python -m venv .venv
 
 If `.venv` already exists and the dependencies are installed, run only the last command.
 
-All four model implementations are currently blank. Running the script splits the data, displays `pending` for each model, and exports a comparison table with blank evaluation fields. You can implement one model at a time; unfinished models will be skipped.
+Decision Tree is implemented with `max_depth = 3, 5, None`. Running the script compares these candidates using training-set cross-validation, evaluates the selected model, and exports its results. Logistic Regression, kNN, and SVM are still blank and display `pending` with blank evaluation fields.
+
+The current Decision Tree function also runs a separate depth comparison and saves `decision_tree_results.csv`, `decision_tree_accuracy.png`, and `decision_tree_depth5_confusion_matrix.png`. The depth-5 plot describes that specific candidate; `decision_tree_confusion_matrix.png` describes the model selected by cross-validation. The per-depth test scores are for reporting, not parameter selection.
 
 ## Shared Workflow (Implemented)
 
