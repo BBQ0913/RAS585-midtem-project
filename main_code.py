@@ -211,72 +211,19 @@ def build_decision_tree_models():
 # Member 3 — k-Nearest Neighbors
 # =============================================================================
 def build_knn_models():
-    """Build kNN models with different k values.
-    How kNN works and how distances are calculated:
-      kNN stores the training samples and learns no parameters. To classify a
-      new sample, it computes the Euclidean distance to every training sample,
-      d(x, x') = sqrt(sum_j (x_j - x'_j)^2), takes the k closest neighbors,
-      and predicts the majority class among them. Because distance mixes all
-      30 features, the shared Pipeline standardizes them first so features
-      with large units (e.g. area) do not dominate small ones (e.g. smoothness).
-    Effect of k on classification results:
-      A small k follows local structure closely, so it has low bias but is
-      sensitive to noisy or mislabeled neighbors (higher variance).
-      A larger k averages over more neighbors, giving smoother decision
-      boundaries that are more stable but may blur the class border.
-    Experimental observations:
-      Three k values were tested: 3, 5, and 10.
-      k=3 and k=5 both reached about 96.26% cross-validation accuracy, and
-      k=10 had the highest at about 96.92%, so the smoother boundary helped.
-      The final model achieved about 97.58% training accuracy and 96.49%
-      test accuracy. Its test confusion matrix was [[39, 3], [1, 71]],
-      with rows=true and columns=predicted, ordered malignant, benign.
-      On the test set alone, k=3 scored highest (98.25%), then k=10 (96.49%)
-      and k=5 (95.61%). k=10 is still the selected model because the choice
-      is made by CV; 114 test samples are too few to pick k reliably.
-      These observations use the shared split and five-fold CV settings.
+    """TODO: Add KNeighborsClassifier models with k = 3, 5, and 10.
+
+    Add the required imports inside this function.
+    Return format: {"configuration name": unfitted classifier object, ...}
+    Explanation fields (to be completed by the assigned member):
+      How kNN works and how distances are calculated:
+      Effect of k on classification results:
+      Experimental observations:
     """
-    from sklearn.neighbors import KNeighborsClassifier
     models = {
-        "k=3": KNeighborsClassifier(n_neighbors=3),
-        "k=5": KNeighborsClassifier(n_neighbors=5),
-        "k=10": KNeighborsClassifier(n_neighbors=10),
+        # TODO: Add kNN configurations and model objects.
     }
-    plot_knn_comparison(models)
     return models
-
-
-def plot_knn_comparison(models):
-    """Save per-k train/test accuracy for reporting; selection still uses CV only."""
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    X, y = load_breast_cancer(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y,
-    )
-    rows = []
-    for setting, estimator in models.items():
-        # kNN is distance-based, so scale inside the Pipeline as in the shared workflow.
-        fitted = make_pipeline(estimator).fit(X_train, y_train)
-        rows.append({
-            "setting": setting,
-            "train_accuracy": accuracy_score(y_train, fitted.predict(X_train)),
-            "test_accuracy": accuracy_score(y_test, fitted.predict(X_test)),
-        })
-    write_csv(OUTPUT_DIR / "knn_results.csv", rows,
-              ["setting", "train_accuracy", "test_accuracy"])
-
-    labels = [row["setting"] for row in rows]
-    figure, axis = plt.subplots(figsize=(8, 5))
-    axis.plot(labels, [row["train_accuracy"] for row in rows], marker="o", label="Training Accuracy")
-    axis.plot(labels, [row["test_accuracy"] for row in rows], marker="s", label="Testing Accuracy")
-    axis.set_xlabel("Number of Neighbors (k)")
-    axis.set_ylabel("Accuracy")
-    axis.set_title("kNN Accuracy Comparison")
-    axis.legend()
-    axis.grid(True)
-    figure.tight_layout()
-    figure.savefig(OUTPUT_DIR / "knn_accuracy.png", dpi=300)
-    plt.close(figure)
 
 
 # =============================================================================
