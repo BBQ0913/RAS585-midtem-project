@@ -18,7 +18,7 @@ python -m venv .venv
 
 If `.venv` already exists and the dependencies are installed, run only the last command.
 
-Logistic Regression is implemented with `C = 0.01, 0.1, 1, 10, 100`, and Decision Tree is implemented with `max_depth = 3, 5, None`. Running the script compares each method's candidates using training-set cross-validation, evaluates the selected model, and exports its results. kNN and SVM are still blank and display `pending` with blank evaluation fields.
+Logistic Regression is implemented with `C = 0.01, 0.1, 1, 10, 100`, Decision Tree is implemented with `max_depth = 3, 5, None`, and kNN is implemented with `n_neighbors = 3, 5, 10`. Running the script compares each method's candidates using training-set cross-validation, evaluates the selected model, and exports its results. SVM is still blank and displays `pending` with blank evaluation fields.
 
 The current Decision Tree function also runs a separate depth comparison and saves `decision_tree_results.csv`, `decision_tree_accuracy.png`, and `decision_tree_depth5_confusion_matrix.png`. The depth-5 plot describes that specific candidate; `decision_tree_confusion_matrix.png` describes the model selected by cross-validation. The per-depth test scores are for reporting, not parameter selection.
 
@@ -69,6 +69,29 @@ Cross-validation selected `C=0.1`. After refitting on all 455 training samples, 
 
 Two malignant samples were classified as benign, and one benign sample was classified as malignant. These results apply to the fixed split and CV settings above. The decrease in validation accuracy at larger C values suggests that weaker regularization does not improve generalization in this experiment.
 
+## kNN Results
+
+kNN stores the training samples and learns no parameters. To classify a sample, it computes the Euclidean distance `d(x, x') = sqrt(sum_j (x_j - x'_j)^2)` to every training sample and predicts the majority class among the k closest. Because the distance combines all 30 features, standardization inside the shared Pipeline is essential: without it, large-unit features such as area would dominate.
+
+A small k follows local structure closely but is sensitive to noisy neighbors; a larger k averages over more neighbors and gives a smoother, more stable decision boundary.
+
+| k | Mean Five-Fold CV Accuracy |
+| --- | --- |
+| 3 | 96.26% |
+| 5 | 96.26% |
+| **10** | **96.92%** |
+
+Cross-validation selected `k=10`. After refitting on all 455 training samples, this model achieved **97.58% training accuracy** and **96.49% test accuracy** (110 of 114 test samples correct).
+
+| Actual / Predicted | Malignant | Benign |
+| --- | --- | --- |
+| Malignant | 39 | 3 |
+| Benign | 1 | 71 |
+
+Running the script also saves `knn_results.csv` (CV mean/std, training and test accuracy for every k) and `knn_accuracy.png` (those three accuracies plotted against k). `knn_confusion_matrix.png` describes the CV-selected model. The per-k test scores are for reporting, not parameter selection.
+
+Three malignant samples were classified as benign, and one benign sample was classified as malignant. On the test set alone, k=3 would have scored 98.25%, but parameters are chosen by CV only; with 114 test samples, a one- or two-sample difference is not a reliable basis for choosing k.
+
 ## Outputs and Metrics
 
 Outputs are saved to `results/` next to the script. CSV files are updated on each run; confusion matrix images are generated or updated only for models implemented in that run. Use the current CSV status and image paths as your reference, since images from previous runs may remain in the folder.
@@ -89,15 +112,15 @@ Training time is measured with `perf_counter()` around one final Pipeline `fit`.
 | --- | --- | --- |
 | Logistic Regression | 97.37% | 0.002191 |
 | Decision Tree | 93.86% | 0.002730 |
-| kNN | pending | pending |
+| kNN | 96.49% | 0.001097 |
 | SVM | pending | pending |
 
 The values above reflect the latest local verification run; training times vary between runs. See `results/model_comparison.csv` for the most recently generated measurements.
 
-- Method with the highest test accuracy: Logistic Regression among the two implemented methods. The four-method comparison remains incomplete until kNN and SVM are implemented.
+- Method with the highest test accuracy: Logistic Regression among the three implemented methods. The four-method comparison remains incomplete until SVM is implemented.
 - Logistic Regression advantages and disadvantages: Fast to train and provides class probabilities and interpretable coefficients in standardized feature units. Its linear decision boundary may miss nonlinear relationships, and its performance depends on regularization and feature scaling.
 - Decision Tree advantages, disadvantages, and depth comparison:
-- kNN advantages, disadvantages, and comparison of k values:
+- kNN advantages, disadvantages, and comparison of k values: Simple, has no training cost beyond storing the data, and makes no assumption about the shape of the decision boundary. Prediction is slow on large datasets because every query is compared with all training samples, and results depend heavily on feature scaling and the choice of k. CV accuracy rose slightly from k=3/5 (96.26%) to k=10 (96.92%), suggesting the smoother boundary generalizes a little better here.
 - SVM advantages, disadvantages, and kernel comparison:
 - Confusion matrix observations, especially malignant tumors classified as benign:
 - Conclusions and limitations:

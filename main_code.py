@@ -213,6 +213,7 @@ def build_decision_tree_models():
 def build_knn_models():
     """Build kNN models with different k values.
     How kNN works and how distances are calculated:
+<<<<<<< Updated upstream
       kNN stores the training samples and learns no parameters. To classify a
       new sample, it computes the Euclidean distance to every training sample,
       d(x, x') = sqrt(sum_j (x_j - x'_j)^2), takes the k closest neighbors,
@@ -234,6 +235,29 @@ def build_knn_models():
       On the test set alone, k=3 scored highest (98.25%), then k=10 (96.49%)
       and k=5 (95.61%). k=10 is still the selected model because the choice
       is made by CV; 114 test samples are too few to pick k reliably.
+=======
+      kNN learns no parameters; fitting only stores the training samples.
+      To classify a new sample, it computes the Euclidean distance to every
+      training sample, d(x, x') = sqrt(sum_j (x_j - x'_j)^2), takes the k
+      closest neighbors, and predicts the majority class among them.
+      Because the distance mixes all 30 features, the shared Pipeline
+      standardizes them first so large-unit features such as area do not
+      dominate small-unit features such as smoothness.
+    Effect of k on classification results:
+      A small k follows local structure closely, so it has low bias but is
+      sensitive to noisy neighbors (higher variance). A larger k averages over
+      more neighbors, giving a smoother and more stable decision boundary
+      that may blur the border between the classes.
+    Experimental observations:
+      Three k values were tested: 3, 5, and 10.
+      k=3 and k=5 both reached about 96.26% cross-validation accuracy, and
+      k=10 had the highest at about 96.92%, so it was selected.
+      The final model achieved about 97.58% training accuracy and 96.49%
+      test accuracy. Its test confusion matrix was [[39, 3], [1, 71]],
+      with rows=true and columns=predicted, ordered malignant, benign.
+      On the test set alone k=3 scored higher (98.25%), but the choice is
+      made by CV; 114 test samples are too few to pick k reliably.
+>>>>>>> Stashed changes
       These observations use the shared split and five-fold CV settings.
     """
     from sklearn.neighbors import KNeighborsClassifier
@@ -242,17 +266,31 @@ def build_knn_models():
         "k=5": KNeighborsClassifier(n_neighbors=5),
         "k=10": KNeighborsClassifier(n_neighbors=10),
     }
+<<<<<<< Updated upstream
     plot_knn_comparison(models)
     return models
 
 
 def plot_knn_comparison(models):
     """Save per-k train/test accuracy for reporting; selection still uses CV only."""
+=======
+    save_knn_comparison(models)
+    return models
+
+
+def save_knn_comparison(models):
+    """Save per-k CV, training, and test accuracy for reporting.
+
+    Selection still happens in evaluate_family() using CV only; the test
+    scores here are for the presentation, not for choosing k.
+    """
+>>>>>>> Stashed changes
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     X, y = load_breast_cancer(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y,
     )
+<<<<<<< Updated upstream
     rows = []
     for setting, estimator in models.items():
         # kNN is distance-based, so scale inside the Pipeline as in the shared workflow.
@@ -274,6 +312,47 @@ def plot_knn_comparison(models):
     axis.set_title("kNN Accuracy Comparison")
     axis.legend()
     axis.grid(True)
+=======
+    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+    rows = []
+    for setting, estimator in models.items():
+        # kNN is distance-based, so scale inside the Pipeline as in the shared workflow.
+        scores = cross_val_score(make_pipeline(estimator), X_train, y_train,
+                                 scoring="accuracy", cv=cv, n_jobs=1)
+        fitted = make_pipeline(estimator).fit(X_train, y_train)
+        rows.append({
+            "setting": setting,
+            "cv_accuracy_mean": float(np.mean(scores)),
+            "cv_accuracy_std": float(np.std(scores)),
+            "train_accuracy": accuracy_score(y_train, fitted.predict(X_train)),
+            "test_accuracy": accuracy_score(y_test, fitted.predict(X_test)),
+        })
+    write_csv(OUTPUT_DIR / "knn_results.csv", rows, list(rows[0]))
+
+    labels = [row["setting"] for row in rows]
+    positions = np.arange(len(labels))
+    figure, axis = plt.subplots(figsize=(8, 5))
+    axis.plot(positions, [row["train_accuracy"] for row in rows], marker="o",
+              linewidth=2, color="#2a78d6", label="Training Accuracy")
+    axis.errorbar(positions, [row["cv_accuracy_mean"] for row in rows],
+                  yerr=[row["cv_accuracy_std"] for row in rows], marker="D",
+                  linewidth=2, capsize=4, color="#1baf7a",
+                  label="5-Fold CV Accuracy (mean ± std)")
+    axis.plot(positions, [row["test_accuracy"] for row in rows], marker="s",
+              linewidth=2, color="#eb6834", label="Testing Accuracy")
+    best = max(range(len(rows)), key=lambda i: rows[i]["cv_accuracy_mean"])
+    axis.annotate("selected by CV", (positions[best], rows[best]["cv_accuracy_mean"]),
+                  xytext=(-40, 22), textcoords="offset points", ha="right",
+                  color="#555555", arrowprops={"arrowstyle": "-", "color": "#999999"})
+    axis.set_xticks(positions, labels)
+    axis.set_xlabel("Number of Neighbors (k)")
+    axis.set_ylabel("Accuracy")
+    axis.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=1))
+    axis.set_title("kNN Accuracy Comparison")
+    axis.grid(True, color="#e5e5e5")
+    axis.spines[["top", "right"]].set_visible(False)
+    axis.legend(frameon=False)
+>>>>>>> Stashed changes
     figure.tight_layout()
     figure.savefig(OUTPUT_DIR / "knn_accuracy.png", dpi=300)
     plt.close(figure)
