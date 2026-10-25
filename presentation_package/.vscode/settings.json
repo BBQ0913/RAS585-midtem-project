@@ -1,0 +1,8 @@
+{
+    // VS Code accepts comments in this settings file.
+    // Use Python's venv tool to manage this project's installed packages.
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    // workspaceFolder means the project folder opened in VS Code.
+    // Use the project's Windows Python environment instead of a system Python.
+    "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+}

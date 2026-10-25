@@ -11,16 +11,32 @@ Use the Breast Cancer Wisconsin Diagnostic Dataset included in scikit-learn: 569
 Python 3.10 or newer is recommended. Run these commands in PowerShell from the project folder:
 
 ```powershell
+# Create a separate Python environment for this project (only needed once).
 python -m venv .venv
+# Install the packages listed in requirements.txt into that environment.
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+# Run the full experiment using that same Python environment.
 .\.venv\Scripts\python.exe main_code.py
 ```
 
 If `.venv` already exists and the dependencies are installed, run only the last command.
 
-Logistic Regression is implemented with `C = 0.01, 0.1, 1, 10, 100`, Decision Tree is implemented with `max_depth = 3, 5, None`, and kNN is implemented with `n_neighbors = 3, 5, 10`. Running the script compares each method's candidates using training-set cross-validation, evaluates the selected model, and exports its results. SVM is still blank and displays `pending` with blank evaluation fields.
+All four methods are implemented: Logistic Regression with `C = 0.01, 0.1, 1, 10, 100`; Decision Tree with `max_depth = 3, 5, None`; kNN with `n_neighbors = 3, 5, 10`; and SVM with `linear` and `rbf` kernels at `C=1`. The RBF model uses `gamma="scale"`. Running the script compares 13 candidates using training-set cross-validation, selects one per method, and exports the results.
 
-The current Decision Tree function also runs a separate depth comparison and saves `decision_tree_results.csv`, `decision_tree_accuracy.png`, and `decision_tree_depth5_confusion_matrix.png`. The depth-5 plot describes that specific candidate; `decision_tree_confusion_matrix.png` describes the model selected by cross-validation. The per-depth test scores are for reporting, not parameter selection.
+Each method also gets a parameter comparison CSV and chart. `decision_tree_depth5_confusion_matrix.png` describes the depth-5 candidate; `decision_tree_confusion_matrix.png` describes the CV-selected tree. Per-candidate test scores are for reporting only and never select parameters.
+
+The `.vscode/settings.json` file points VS Code to the Windows `.venv` interpreter and includes English comments explaining each setting. `.gitignore` excludes the local environment, Python caches, and generated `results/` files from Git. The script uses Python's built-in `csv` module, so pandas is no longer required.
+
+## Reading the Code as a Beginner
+
+- A **sample** is one dataset row; a **feature** is one measured property. `X` contains the features and `y` contains the correct class labels.
+- A **parameter setting** is a choice made before training, such as the number of neighbors. A **candidate** is a model created with one such setting.
+- `build_*_models()` creates untrained candidates. These functions do not load data, train models, or write files.
+- `prepare_data()` makes one shared split. `make_pipeline()` connects feature scaling to a fresh model.
+- `evaluate_family()` compares candidates using CV, freezes the selected setting, then fits each candidate on the full training set for reporting.
+- The `save_*()` functions create tables, images, and a combined summary. `main()` runs the workflow in order.
+
+The settings near the top of `main_code.py` control the random seed, test fraction, number of CV folds, and output folder. English comments explain both these settings and the purpose of each processing step. Importing the module does not start the experiment; executing it directly does.
 
 ## Shared Workflow (Implemented)
 
@@ -29,11 +45,12 @@ The current Decision Tree function also runs a separate depth comparison and sav
 3. Place `StandardScaler` and the classifier in a single Pipeline. Scaling statistics are learned only from the training data used in each fit.
 4. Compare each member's candidate configurations using the same five stratified cross-validation folds within the training set. Select the configuration with the highest mean validation accuracy; ties go to the first listed configuration.
 5. Refit the selected configuration on the full training set, record training time, calculate training and test accuracy, and plot the test-set confusion matrix.
-6. Export the parameter comparison table, final model comparison table, and confusion matrix images.
+6. Refit the remaining candidates for descriptive reports, reusing their existing CV scores. These test scores cannot change the selected configuration.
+7. Export parameter tables/charts, the final model table/chart, confusion matrix images, and a combined English summary.
 
 Decision Tree does not require standardization, but uses the same Pipeline for consistency. Let the shared code train all models. Do not standardize the entire dataset beforehand or use the test set to select parameters.
 
-## Where Each Member Adds Their Work
+## Member Responsibilities
 
 In your assigned function in `main_code.py`, add the classifier import and fill in the `models` dictionary. Use the format `"descriptive configuration name": unfitted scikit-learn classifier object`, with one entry per parameter configuration. Do not call `fit` or `predict` inside these functions.
 
@@ -44,7 +61,7 @@ In your assigned function in `main_code.py`, add the classifier import and fill 
 | Member 3 | `build_knn_models()` | KNeighborsClassifier; n_neighbors = 3, 5, 10; explain the effect of k |
 | Member 4 | `build_svm_models()` | SVC; linear and rbf kernels; explain decision boundaries and combine the results |
 
-Use the shared `RANDOM_STATE` for models with randomness. If a convergence warning appears, review your model settings instead of ignoring it. The unfinished functions include blank fields for explaining the method and recording experimental observations.
+Use the shared `RANDOM_STATE` for models with randomness. If a convergence warning appears, review the model settings instead of ignoring it. Member 3's review confirmed the requested k values, equal neighbor voting, Euclidean distance, and scaling inside each CV fit. Duplicate data splitting, CV, and reporting were removed from the builder functions. Decision Tree reporting also now uses the shared Pipeline, so its individual reports and final comparison follow the same workflow.
 
 ## Logistic Regression Results
 
@@ -69,17 +86,29 @@ Cross-validation selected `C=0.1`. After refitting on all 455 training samples, 
 
 Two malignant samples were classified as benign, and one benign sample was classified as malignant. These results apply to the fixed split and CV settings above. The decrease in validation accuracy at larger C values suggests that weaker regularization does not improve generalization in this experiment.
 
+## Decision Tree Results
+
+A tree repeatedly splits samples using feature cutoffs. A larger `max_depth` allows more detailed decisions. `None` allows unlimited depth, subject to the classifier's other stopping rules.
+
+| Maximum Depth | Mean Five-Fold CV Accuracy | Training Accuracy | Test Accuracy |
+| --- | --- | --- | --- |
+| **3** | **92.53%** | **97.58%** | **93.86%** |
+| 5 | 92.31% | 99.34% | 92.11% |
+| None | 91.65% | 100.00% | 91.23% |
+
+CV selected depth 3. Increasing depth improves training accuracy while CV and test accuracy decrease in this run. This is evidence of overfitting: the deeper tree fits training details that do not transfer as well to new samples. The selected tree's confusion matrix is `[[38, 4], [3, 69]]`, with actual classes in rows and predicted classes in columns.
+
 ## kNN Results
 
-kNN stores the training samples and learns no parameters. To classify a sample, it computes the Euclidean distance `d(x, x') = sqrt(sum_j (x_j - x'_j)^2)` to every training sample and predicts the majority class among the k closest. Because the distance combines all 30 features, standardization inside the shared Pipeline is essential: without it, large-unit features such as area would dominate.
+kNN stores the training samples instead of learning a formula of weights. To classify a sample, it finds nearby training samples using Euclidean distance `d(x, x') = sqrt(sum_j (x_j - x'_j)^2)` and predicts the majority class among the k closest. Each neighbor has one vote. Because distance combines all 30 features, standardization inside the shared Pipeline is essential: without it, large-unit features such as area could dominate. At `k=10`, a 5-to-5 class vote is possible; scikit-learn chooses the smaller label, `0` (malignant), for a tied class vote.
 
 A small k follows local structure closely but is sensitive to noisy neighbors; a larger k averages over more neighbors and gives a smoother, more stable decision boundary.
 
-| k | Mean Five-Fold CV Accuracy |
-| --- | --- |
-| 3 | 96.26% |
-| 5 | 96.26% |
-| **10** | **96.92%** |
+| k | Mean Five-Fold CV Accuracy | Training Accuracy | Test Accuracy |
+| --- | --- | --- | --- |
+| 3 | 96.26% | 97.80% | 98.25% |
+| 5 | 96.26% | 97.36% | 95.61% |
+| **10** | **96.92%** | **97.58%** | **96.49%** |
 
 Cross-validation selected `k=10`. After refitting on all 455 training samples, this model achieved **97.58% training accuracy** and **96.49% test accuracy** (110 of 114 test samples correct).
 
@@ -92,38 +121,85 @@ Running the script also saves `knn_results.csv` (CV mean/std, training and test 
 
 Three malignant samples were classified as benign, and one benign sample was classified as malignant. On the test set alone, k=3 would have scored 98.25%, but parameters are chosen by CV only; with 114 test samples, a one- or two-sample difference is not a reliable basis for choosing k.
 
+## SVM Results (Member 4)
+
+SVM finds a decision boundary that balances a wide margin with penalties for training errors or samples inside the margin. The closest influential training samples are called **support vectors**. A linear kernel creates a flat boundary in the feature space. An RBF (radial basis function) kernel uses similarity between samples to allow a curved boundary.
+
+Both candidates use `C=1`, so this experiment compares kernel types while holding C fixed. Increasing C penalizes margin violations more strongly; decreasing C allows more violations in exchange for stronger regularization. RBF also uses `gamma="scale"`, calculated from the standardized training inputs. Larger gamma values make each sample's influence more local. The linear kernel does not use gamma.
+
+| Kernel | Mean Five-Fold CV Accuracy | Training Accuracy | Test Accuracy |
+| --- | --- | --- | --- |
+| Linear | 96.48% | 99.12% | 97.37% |
+| **RBF** | **96.92%** | **98.24%** | **98.25%** |
+
+CV selected RBF. After refitting on all 455 training samples, it correctly classified **112 of 114 test samples**. Its slightly higher CV score supports choosing RBF between these two candidates, but the gap is small. The experiment does not establish that curved boundaries always perform better or that these are the best possible SVM settings.
+
+| Actual / Predicted | Malignant | Benign |
+| --- | --- | --- |
+| Malignant | 41 | 1 |
+| Benign | 1 | 71 |
+
+One malignant sample was classified as benign and one benign sample as malignant. `svm_results.csv` and `svm_accuracy.png` compare the kernels; `svm_confusion_matrix.png` shows the selected RBF model.
+
 ## Outputs and Metrics
 
-Outputs are saved to `results/` next to the script. CSV files are updated on each run; confusion matrix images are generated or updated only for models implemented in that run. Use the current CSV status and image paths as your reference, since images from previous runs may remain in the folder.
+Outputs are saved to `results/` next to the script. A successful full run updates the current tables, charts, confusion matrices, and summary. Unrelated files from previous runs are not deleted. Accuracy results below were verified with Python 3.13.5, scikit-learn 1.9.1, NumPy 2.5.3, and Matplotlib 3.11.2; other supported package versions may produce small differences.
 
 | File | Contents |
 | --- | --- |
-| `model_comparison.csv` | Status, best configuration, mean CV accuracy, training/test accuracy, training time in seconds, and confusion matrix path for each method |
+| `model_comparison.csv` | Status, best configuration, mean CV accuracy, training/test accuracy, training time in seconds, both error counts, and confusion matrix path for each method |
 | `parameter_comparison.csv` | Mean CV accuracy and standard deviation for each candidate configuration |
+| `*_results.csv` | Per-candidate CV mean/std, training/test accuracy, fit time, and `selected_by_cv` flag for each method |
+| `*_accuracy.png` | Per-candidate training, CV, and test accuracy; CV error bars show one standard deviation across folds |
 | `*_confusion_matrix.png` | Test-set confusion matrix for each method's selected configuration |
+| `decision_tree_depth5_confusion_matrix.png` | Extra confusion matrix for the depth-5 tree candidate |
+| `model_comparison.png` | All four selected models' CV/test accuracy and final fit time |
+| `comparison_summary.txt` | Plain-English comparison, highest observed test accuracy, error counts, and limitations |
 
-Accuracy values in the CSV files are fractions from 0 to 1; convert them to percentages for the presentation. Unfinished models have blank metrics, which must not be interpreted as 0%. Confusion matrix rows represent true classes and columns represent predicted classes, both ordered as malignant, benign. The upper-right cell counts malignant tumors incorrectly classified as benign.
+Accuracy values in the CSV files are fractions from 0 to 1; multiply by 100 for percentages. All four model statuses should be `completed`. Confusion matrix rows represent true classes and columns represent predicted classes, both ordered as malignant, benign. The upper-right cell counts malignant tumors incorrectly classified as benign. Standard deviation describes variation between the five fold scores; it is not a confidence interval.
+
+All per-method CSV files now use the same column names, such as `setting`, `train_accuracy`, and `test_accuracy`. This replaces the older Decision Tree CSV's title-style column names. Existing output filenames are retained.
 
 Training time is measured with `perf_counter()` around one final Pipeline `fit`. It includes standardization and model fitting, and excludes parameter search, prediction, and plotting. Timing depends on the computer and its current workload; a fast kNN fit does not necessarily imply fast prediction. Differences between training accuracy and CV/test accuracy can support the discussion of overfitting. Results describe performance under this particular data split and set of candidate configurations.
 
-## Current Comparison and Discussion (Complete After All Methods Are Implemented)
+## Four-Method Comparison and Discussion (Member 4)
 
-| Model | Test Accuracy | Training Time (s) |
+| Model | CV-Selected Setting | Mean CV Accuracy | Test Accuracy | Malignant Predicted Benign | Benign Predicted Malignant |
+| --- | --- | --- | --- | --- | --- |
+| Logistic Regression | C=0.1 | 98.24% | 97.37% | 2 | 1 |
+| Decision Tree | max_depth=3 | 92.53% | 93.86% | 4 | 3 |
+| kNN | k=10 | 96.92% | 96.49% | 3 | 1 |
+| **SVM** | **RBF, C=1, gamma=scale** | **96.92%** | **98.25%** | **1** | **1** |
+
+SVM has the highest observed test accuracy among the four CV-selected models in this experiment. Logistic Regression has the highest mean CV accuracy. These describe different evaluations: CV uses folds within the training set, while test accuracy uses the separate 114-sample test set. SVM makes only one fewer test error than Logistic Regression, so this does not prove a general advantage.
+
+| Method | Advantages | Disadvantages and Observations |
 | --- | --- | --- |
-| Logistic Regression | 97.37% | 0.002191 |
-| Decision Tree | 93.86% | 0.002730 |
-| kNN | 96.49% | 0.001097 |
-| SVM | pending | pending |
+| Logistic Regression | Fast fit; probabilities; coefficients help explain the model | Linear boundary may miss nonlinear patterns; scaling and regularization matter |
+| Decision Tree | Decisions can be expressed as rules; captures nonlinear patterns | Deep trees can overfit; unlimited depth reached 100% training accuracy but only 91.65% CV accuracy |
+| kNN | Simple voting rule; little model-fitting work; flexible boundary | Stores training data; neighbor searches can be costly; sensitive to scaling and k |
+| SVM | Margin-based classification; linear and nonlinear kernels | Scaling and parameter choices matter; RBF boundaries are harder to explain; training may become expensive on large datasets |
 
-The values above reflect the latest local verification run; training times vary between runs. See `results/model_comparison.csv` for the most recently generated measurements.
+In the verification run, final fit times were about 0.005069 s (Logistic Regression), 0.004600 s (Decision Tree), 0.001742 s (kNN), and 0.004633 s (SVM). These single measurements vary between runs and are not a robust speed ranking. See `results/model_comparison.csv` for the latest timings. The chart displays milliseconds, while the CSV stores seconds.
 
-- Method with the highest test accuracy: Logistic Regression among the three implemented methods. The four-method comparison remains incomplete until SVM is implemented.
-- Logistic Regression advantages and disadvantages: Fast to train and provides class probabilities and interpretable coefficients in standardized feature units. Its linear decision boundary may miss nonlinear relationships, and its performance depends on regularization and feature scaling.
-- Decision Tree advantages, disadvantages, and depth comparison:
-- kNN advantages, disadvantages, and comparison of k values: Simple, has no training cost beyond storing the data, and makes no assumption about the shape of the decision boundary. Prediction is slow on large datasets because every query is compared with all training samples, and results depend heavily on feature scaling and the choice of k. CV accuracy rose slightly from k=3/5 (96.26%) to k=10 (96.92%), suggesting the smoother boundary generalizes a little better here.
-- SVM advantages, disadvantages, and kernel comparison:
-- Confusion matrix observations, especially malignant tumors classified as benign:
-- Conclusions and limitations:
+For kNN, CV accuracy increased slightly from k=3/5 to k=10, consistent with a smoother boundary helping here. For SVM, RBF had slightly higher CV and test accuracy than linear at the chosen settings. Neither comparison establishes a universal rule.
+
+The selected SVM misclassified one malignant sample as benign, compared with two for Logistic Regression, three for kNN, and four for the selected tree. Accuracy alone combines both types of error, so the confusion matrices provide useful additional detail.
+
+The main limitations are a single fixed train/test split, a small test set, a limited set of candidate settings, and different numbers of candidates per method. We did not perform statistical significance tests or measure prediction speed. All conclusions apply to this dataset and workflow. Any future tuning should use training data and CV, with new held-out data reserved for a fresh final evaluation.
+
+## Verification
+
+Run the workflow checks with Python's built-in unittest tool:
+
+```powershell
+# Check builder behavior, scaling, CV-only selection, and complete output files.
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+# Optional: run the experiment and treat any warning as an error.
+.\.venv\Scripts\python.exe -W error main_code.py
+```
+
+The integration check writes into a temporary folder, so it does not replace the results you use for your presentation.
 
 ## Seven-Slide Presentation Outline
 

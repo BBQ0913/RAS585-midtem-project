@@ -1,4 +1,13 @@
+# Python creates these cache files automatically; they are not source code.
 __pycache__/
 *.py[cod]
+# Each computer creates its own Python environment from requirements.txt.
 .venv/
+# The script recreates these tables and images whenever it runs.
 results/
+RAS585_ChatGPT_Presentation_Package.zip
+presentation_package/START_HERE.md
+.gitignore
+tests/test_workflow.py
+presentation_package/tests/test_workflow.py
+presentation_package/CHATGPT_PROMPT.md
